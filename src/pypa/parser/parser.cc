@@ -15,12 +15,15 @@
 #include <cassert>
 #include <cstddef>
 
-#include <gmp.h>
+// NOTE(zasgar) Disabling GMP.
+//#include <gmp.h>
 
 #include <pypa/parser/apply.hh>
 #include <pypa/parser/parser_fwd.hh>
 #include <double-conversion/src/double-conversion.h>
 #include <pypa/ast/context_assign.hh>
+
+#include "absl/strings/numbers.h"
 
 namespace pypa {
 
@@ -109,29 +112,45 @@ void indentation_error_dbg(State & s, AstPtr ast, int line = -1, char const * fi
 
 bool number_from_base(int64_t base, State & s, AstNumberPtr & ast) {
     String const & value = top(s).value;
+    String value_cpy = top(s).value;
     AstNumber & result = *ast;
-
-    MP_INT integ;
-    mpz_init_set_str(&integ, value.c_str(), base);
-
+    // NOTE(zasgar): remove gmp dep.
+    int64_t num = 2;    
     result.num_type = AstNumber::Integer;
     pop(s);
     bool long_post_fix = (top(s).value == "L" || top(s).value == "l");
     if(!long_post_fix) {
         unpop(s);
     }
-    if(long_post_fix || !mpz_fits_slong_p(&integ)) {
-        result.num_type = AstNumber::Long;
+    if (long_post_fix) {
+      result.num_type = AstNumber::Long;
+      result.str = value_cpy;
+      return true;
     }
-
-    if(result.num_type == AstNumber::Long) {
-        result.str.resize(mpz_sizeinbase(&integ, 10) + 2, 0);
-        mpz_get_str(&result.str[0], 10, &integ);
-    }
-    else {
-        result.integer = mpz_get_si(&integ);
-    }
-    mpz_clear(&integ);
+    bool retval = absl::SimpleAtoi(value, &num);
+    result.integer = num;
+    return retval;
+//    MP_INT integ;
+//    mpz_init_set_str(&integ, value.c_str(), base);
+//
+//    result.num_type = AstNumber::Integer;
+//    pop(s);
+//    bool long_post_fix = (top(s).value == "L" || top(s).value == "l");
+//    if(!long_post_fix) {
+//        unpop(s);
+//    }
+//    if(long_post_fix || !mpz_fits_slong_p(&integ)) {
+//        result.num_type = AstNumber::Long;
+//    }
+//
+//    if(result.num_type == AstNumber::Long) {
+//        result.str.resize(mpz_sizeinbase(&integ, 10) + 2, 0);
+//        mpz_get_str(&result.str[0], 10, &integ);
+//    }
+//    else {
+//        result.integer = mpz_get_si(&integ);
+//    }
+//    mpz_clear(&integ);
     return true;
 }
 
