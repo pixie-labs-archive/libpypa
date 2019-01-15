@@ -20,7 +20,7 @@
 
 #include <pypa/parser/apply.hh>
 #include <pypa/parser/parser_fwd.hh>
-#include <double-conversion/src/double-conversion.h>
+#include <double-conversion/double-conversion.h>
 #include <pypa/ast/context_assign.hh>
 
 #include "absl/strings/numbers.h"
