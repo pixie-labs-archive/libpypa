@@ -1819,6 +1819,7 @@ bool expr_stmt(State & s, AstStmt & ast) {
                             break; // Break on non empty tuples only
                         }
                         // fallthrough
+      	                [[fallthrough]];
                     default:
                         syntax_error(s, target, "Illegal expression for assignment");
                         return false;
