@@ -220,6 +220,7 @@ bool generic_binop_expr(State & s, AstExpr & ast, TokenKind op, AstBinOpType op_
             ast = bin;
             if(!fun(s, bin->right)) {
                 syntax_error(s, ast, "Expected expression after operator");
+                return false;
             }
         }
         return guard.commit();
