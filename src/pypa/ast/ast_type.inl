@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 PYPA_AST_TYPE(Alias)
+PYPA_AST_TYPE(Arg)
 PYPA_AST_TYPE(Arguments)
 PYPA_AST_TYPE(Assert)
 PYPA_AST_TYPE(Assign)

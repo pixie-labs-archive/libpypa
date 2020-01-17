@@ -33,6 +33,12 @@ PYPA_AST_EXPR(Name) {
 };
 PYPA_AST_MEMBERS3(Name, context, dotted, id);
 
+PYPA_AST_EXPR(Arg) {
+    String      arg; 
+    AstExpr     annotation;
+};
+PYPA_AST_MEMBERS2(Arg, arg, annotation);
+
 PYPA_AST_EXPR(Keyword) {
     AstExpr name;
     AstExpr value;
