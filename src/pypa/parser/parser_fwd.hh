@@ -20,7 +20,7 @@ namespace pypa {
 
     bool and_expr(State & s, AstExpr & ast);
     bool and_test(State & s, AstExpr & ast);
-    bool arglist(State & s, AstArguments & ast);
+    bool arglist(State & s, AstCall & ast);
     bool argument(State & s, AstExpr & ast);
     bool arith_expr(State & s, AstExpr & ast);
     bool assert_stmt(State & s, AstStmt & ast);

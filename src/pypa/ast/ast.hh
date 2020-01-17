@@ -104,10 +104,13 @@ PYPA_AST_STMT(Break) {};
 PYPA_AST_MEMBERS0(Break);
 
 PYPA_AST_EXPR(Call) {
-    AstExpr      function;
-    AstArguments arglist;
+    AstExpr                     function;
+    AstExprList                 arguments;
+    std::vector<AstKeywordPtr>  keywords;
+    AstExpr                     starargs;
+    AstExpr                     kwargs;
 };
-PYPA_AST_MEMBERS2(Call, arglist, function);
+PYPA_AST_MEMBERS5(Call, function, arguments, keywords, starargs, kwargs);
 
 PYPA_AST_STMT(ClassDef) {
     AstExprList decorators;

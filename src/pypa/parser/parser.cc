@@ -958,12 +958,13 @@ bool dotted_as_name(State & s, AstExpr & ast) {
     return guard.commit();
 }
 
-bool arglist(State & s, AstArguments & ast) {
+bool arglist(State & s, AstCall & ast) {
     StateGuard guard(s);
     // location(s, create(ast));
     // (argument expect(s, TokenKind::Comma))* (argument [expect(s, TokenKind::Comma)]||expect(s, TokenKind::Star) test (expect(s, TokenKind::Comma) argument)* [expect(s, TokenKind::Comma) expect(s, TokenKind::DoubleStar) test]||expect(s, TokenKind::DoubleStar) test)
     AstExpr item;
     while(!(is(s, TokenKind::Star) || is(s, TokenKind::DoubleStar)) && argument(s, item)) {
+        // Check to make sure positional arguments come before keyword arguments.
         if(item->type != AstType::Keyword) {
             if(!ast.keywords.empty()) {
                 syntax_error(s, ast, "Expected keyword argument");
@@ -972,7 +973,7 @@ bool arglist(State & s, AstArguments & ast) {
             ast.arguments.push_back(item);
         }
         else {
-            ast.keywords.push_back(item);
+            ast.keywords.push_back(std::static_pointer_cast<AstKeyword>(item));
         }
         if(!expect(s, TokenKind::Comma)) {
             break;
@@ -980,7 +981,7 @@ bool arglist(State & s, AstArguments & ast) {
     }
     expect(s, TokenKind::Comma);
     while(expect(s, TokenKind::Star)) {
-        if(!test(s, ast.args)) {
+        if(!test(s, ast.starargs)) {
             syntax_error(s, ast, "Expected expression after `*`");
             return false;
         }
@@ -993,7 +994,7 @@ bool arglist(State & s, AstArguments & ast) {
             syntax_error(s, ast, "Expected keyword argument");
             return false;
         }
-        ast.keywords.push_back(item);
+        ast.keywords.push_back(std::static_pointer_cast<AstKeyword>(item));
         if(!expect(s, TokenKind::Comma)) {
             break;
         }
@@ -1911,7 +1912,7 @@ bool decorator(State & s, AstExpr & ast) {
         return false;
     }
     if(expect(s, TokenKind::LeftParen)) {
-        arglist(s, ptr->arglist);
+        arglist(s, *ptr);
         if(!expect(s, TokenKind::RightParen)) {
             syntax_error(s, ast, "Expected `)`");
             return false;
@@ -2328,7 +2329,7 @@ bool trailer(State & s, AstExpr & ast, AstExpr target) {
         ast = ptr;
         ptr->function = target;
         expect(s, TokenKind::LeftParen);
-        arglist(s, ptr->arglist);
+        arglist(s, *ptr);
         if(!expect(s, TokenKind::RightParen)) {
             syntax_error(s, ast, "Expected `)`");
             return false;
