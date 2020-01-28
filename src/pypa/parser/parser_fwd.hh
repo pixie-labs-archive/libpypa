@@ -20,7 +20,7 @@ namespace pypa {
 
     bool and_expr(State & s, AstExpr & ast);
     bool and_test(State & s, AstExpr & ast);
-    bool arglist(State & s, AstArguments & ast);
+    bool arglist(State & s, AstCall & ast);
     bool argument(State & s, AstExpr & ast);
     bool arith_expr(State & s, AstExpr & ast);
     bool assert_stmt(State & s, AstStmt & ast);
@@ -58,6 +58,7 @@ namespace pypa {
     bool flow_stmt(State & s, AstStmt & ast);
     bool for_stmt(State & s, AstStmt & ast);
     bool fpdef(State & s, AstExpr & ast);
+    bool tfpdef(State & s, AstArgPtr & ast);
     bool fplist(State & s, AstExpr & ast);
     bool funcdef(State & s, AstStmt & ast);
     bool global_stmt(State & s, AstStmt & ast);
@@ -103,6 +104,7 @@ namespace pypa {
     bool trailer(State & s, AstExpr & ast, AstExpr target);
     bool try_stmt(State & s, AstStmt & ast);
     bool varargslist(State & s, AstArguments & ast);
+    bool typedargslist(State & s, AstArguments & ast);
     bool while_stmt(State & s, AstStmt & ast);
     bool with_stmt(State & s, AstStmt & ast);
     bool xor_expr(State & s, AstExpr & ast);

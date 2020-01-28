@@ -919,12 +919,12 @@ bool atom(State & s, AstExpr & ast) {
 bool parameters(State & s, AstArguments & ast) {
     StateGuard guard(s);
     location(s, ast);
-    // expect(s, TokenKind::LeftParen) [varargslist] expect(s, TokenKind::RightParen)
+    // expect(s, TokenKind::LeftParen) [typedargslist] expect(s, TokenKind::RightParen)
     if(!expect(s, TokenKind::LeftParen)) {
         return false;
     }
 
-    varargslist(s, ast);
+    typedargslist(s, ast);
 
     if(!expect(s, TokenKind::RightParen)) {
         syntax_error(s, ast, "Expected `)`");
@@ -958,12 +958,13 @@ bool dotted_as_name(State & s, AstExpr & ast) {
     return guard.commit();
 }
 
-bool arglist(State & s, AstArguments & ast) {
+bool arglist(State & s, AstCall & ast) {
     StateGuard guard(s);
     // location(s, create(ast));
     // (argument expect(s, TokenKind::Comma))* (argument [expect(s, TokenKind::Comma)]||expect(s, TokenKind::Star) test (expect(s, TokenKind::Comma) argument)* [expect(s, TokenKind::Comma) expect(s, TokenKind::DoubleStar) test]||expect(s, TokenKind::DoubleStar) test)
     AstExpr item;
     while(!(is(s, TokenKind::Star) || is(s, TokenKind::DoubleStar)) && argument(s, item)) {
+        // Check to make sure positional arguments come before keyword arguments.
         if(item->type != AstType::Keyword) {
             if(!ast.keywords.empty()) {
                 syntax_error(s, ast, "Expected keyword argument");
@@ -972,7 +973,7 @@ bool arglist(State & s, AstArguments & ast) {
             ast.arguments.push_back(item);
         }
         else {
-            ast.keywords.push_back(item);
+            ast.keywords.push_back(std::static_pointer_cast<AstKeyword>(item));
         }
         if(!expect(s, TokenKind::Comma)) {
             break;
@@ -980,7 +981,7 @@ bool arglist(State & s, AstArguments & ast) {
     }
     expect(s, TokenKind::Comma);
     while(expect(s, TokenKind::Star)) {
-        if(!test(s, ast.args)) {
+        if(!test(s, ast.starargs)) {
             syntax_error(s, ast, "Expected expression after `*`");
             return false;
         }
@@ -993,7 +994,7 @@ bool arglist(State & s, AstArguments & ast) {
             syntax_error(s, ast, "Expected keyword argument");
             return false;
         }
-        ast.keywords.push_back(item);
+        ast.keywords.push_back(std::static_pointer_cast<AstKeyword>(item));
         if(!expect(s, TokenKind::Comma)) {
             break;
         }
@@ -1911,7 +1912,7 @@ bool decorator(State & s, AstExpr & ast) {
         return false;
     }
     if(expect(s, TokenKind::LeftParen)) {
-        arglist(s, ptr->arglist);
+        arglist(s, *ptr);
         if(!expect(s, TokenKind::RightParen)) {
             syntax_error(s, ast, "Expected `)`");
             return false;
@@ -2245,6 +2246,25 @@ bool fplist(State & s, AstExpr & ast) {
     return false;
 }
 
+bool tfpdef(State & s, AstExpr & ast) {
+    StateGuard guard(s, ast);
+    AstArgPtr arg;
+    location(s, create(arg));
+    ast = arg;
+    // expect(s, Token::Identifier) [ : TYPE ]  
+    if(!consume_value(s, Token::Identifier, arg->arg)) {
+        syntax_error(s, arg, "Expected identifier");
+        return false;
+    }
+    if(expect(s, TokenKind::Colon)) {
+        if(!test(s, arg->annotation)) {
+            syntax_error(s, arg->annotation, "Expected identifier for the annotation");
+            return false;
+        }
+    }
+    return guard.commit();
+}
+
 bool fpdef(State & s, AstExpr & ast) {
     StateGuard guard(s, ast);
     location(s, create(ast));
@@ -2264,6 +2284,54 @@ bool fpdef(State & s, AstExpr & ast) {
             return false;
         }
     }
+    return guard.commit();
+}
+
+bool typedargslist(State & s, AstArguments & ast) {
+    StateGuard guard(s);
+    location(s, ast);
+    while(!is(s, TokenKind::DoubleStar) && !is(s, TokenKind::Star)) {
+        AstExpr arg;
+        if(!tfpdef(s, arg)) {
+            break;
+        }
+        ast.arguments.push_back(arg);
+        if(expect(s, TokenKind::Equal)) {
+            if(!test(s, arg)) {
+                syntax_error(s, ast, "Expected expression after `=`");
+                return false;
+            }
+            ast.defaults.push_back(arg);
+        }
+        else {
+            ast.defaults.push_back({});
+        }
+        if(!expect(s, TokenKind::Comma)) {
+            break;
+        }
+    }
+    if(expect(s, TokenKind::Star)) {
+        if(!get_name(s, ast.args)) {
+            syntax_error(s, ast, "Expected identifier after `*`");
+            return false;
+        }
+        expect(s, TokenKind::Comma);
+    }
+
+    if(expect(s, TokenKind::DoubleStar)) {
+        if(!get_name(s, ast.kwargs)) {
+            syntax_error(s, ast, "Expected identifier after `**`");
+            return false;
+        }
+    }
+    visit(context_assign{AstContext::Param}, ast.args);
+    for(auto & a : ast.arguments) {
+        visit(context_assign{AstContext::Param}, a);
+    }
+    for(auto & k : ast.keywords) {
+        visit(context_assign{AstContext::Param}, k);
+    }
+    visit(context_assign{AstContext::Param}, ast.kwargs);
     return guard.commit();
 }
 
@@ -2328,7 +2396,7 @@ bool trailer(State & s, AstExpr & ast, AstExpr target) {
         ast = ptr;
         ptr->function = target;
         expect(s, TokenKind::LeftParen);
-        arglist(s, ptr->arglist);
+        arglist(s, *ptr);
         if(!expect(s, TokenKind::RightParen)) {
             syntax_error(s, ast, "Expected `)`");
             return false;

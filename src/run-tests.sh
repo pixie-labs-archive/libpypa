@@ -7,12 +7,18 @@
 #
 
 CPYTHON_SRC=${CPYTHON_SRC:-$HOME/devel/apps/cpython}
-test -d $CPYTHON_SRC/Python || { echo "CPYTHON_SRC not correctly set: $CPYTHON_SOURCE_DIR/Python not found" && exit 1; }
+#test -d $CPYTHON_SRC/Python || { echo "CPYTHON_SRC not correctly set: $CPYTHON_SOURCE_DIR/Python not found" && exit 1; }
+PARSER_TEST="./parser-test"
+if [ ! -f  "${PARSER_TEST}" ]; then 
+    echo "${PARSER_TEST} not found in $(pwd)"
+    exit 1
+fi
+
 mkdir -p results
 for file in `find $CPYTHON_SRC -name "*.py"`
 do
     echo "Parsing $file"
-    ./parser-test $file &> ./results/`basename $file`.ast.out && rm -f ./results/`basename $file`.ast.out
+    "${PARSER_TEST}" $file &> ./results/`basename $file`.ast.out && rm -f ./results/`basename $file`.ast.out
 done
 
 BADSYNNOCARET=0

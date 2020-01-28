@@ -25,6 +25,7 @@ ltmain.sh
 missing
 src/lexer-test
 src/parser-test
+results
 
 CMakeCache.txt
 CMakeFiles

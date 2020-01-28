@@ -101,6 +101,11 @@ namespace pypa {
                     }
                     break;
                 }
+                case AstType::Arg: {
+                    AstArg &  n = *std::static_pointer_cast<AstArg>(e);
+                    add_def(n.arg, SymbolFlag_Param, n);
+                    break;
+                }
                 default:
                     PYPA_ADD_SYMBOL_ERR("Invalid expression in parameter list", *e);
                     break;
