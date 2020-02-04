@@ -2253,7 +2253,9 @@ bool tfpdef(State & s, AstExpr & ast) {
     ast = arg;
     // expect(s, Token::Identifier) [ : TYPE ]  
     if(!consume_value(s, Token::Identifier, arg->arg)) {
-        syntax_error(s, arg, "Expected identifier");
+        if (!is(s, Token::DelimParenClose)) {
+            syntax_error(s, arg, "Expected name identifier in args");
+        }
         return false;
     }
     if(expect(s, TokenKind::Colon)) {
