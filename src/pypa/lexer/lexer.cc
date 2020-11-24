@@ -600,12 +600,15 @@ namespace pypa {
         int col = 0, alt_col = 0;
         char c = 0;
         int changes = 0;
+        // Get the number of columns that we indent by.
         for(;;) {
             c = next_char();
             if(c == ' ') {
+                // Increment once per space.
                 ++col; ++alt_col;
             }
             else if(c == '\t') {
+                // Set to next multiple of tab_size.
                 col = (col/tab_size+1)*tab_size;
                 alt_col += 1;
             }
@@ -626,12 +629,12 @@ namespace pypa {
 
         if(col == indent_stack_[indent_]) {
             if(!ignore_altindent_errors_ && alt_col != alt_indent_stack_[indent_]) {
-                return add_indent_error();
+                return add_indent_error(false, "inconsistent use of tabs and spaces in indentation");
             }
         }
         else if(col > indent_stack_[indent_]) {
             if(!ignore_altindent_errors_ && alt_col <= alt_indent_stack_[indent_]) {
-                return add_indent_error();
+                return add_indent_error(false, "inconsistent use of tabs and spaces in indentation");
             }
             ++indent_;
             ++changes;
@@ -651,10 +654,10 @@ namespace pypa {
                 --indent_;
             }
             if(col != indent_stack_[indent_]) {
-                return add_indent_error(true);
+                return add_indent_error(true, "unindent does not match any outer indentation level");
             }
             if(!ignore_altindent_errors_ && alt_col != alt_indent_stack_[indent_]) {
-                return add_indent_error();
+                return add_indent_error(false, "inconsistent use of tabs and spaces in indentation");
             }
         }
 
@@ -673,14 +676,14 @@ namespace pypa {
         return true;
     }
 
-    bool Lexer::add_indent_error(bool dedent) {
+    bool Lexer::add_indent_error(bool dedent, const std::string& message) {
         token_buffer_.push_back({
             {dedent ? Token::DedentationError : Token::IndentationError,
              TokenKind::Error,
              TokenClass::Default},
             line(),
             column_,
-            dedent ? "Dedentation Error" : "Indentation Error"});
+            message});
         return false;
     }
 

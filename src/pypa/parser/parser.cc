@@ -94,11 +94,7 @@ void syntax_error_dbg(State & s, AstPtr ast, char const * message, int line = -1
 
 void indentation_error_dbg(State & s, AstPtr ast, int line = -1, char const * file = 0, char const * function = 0) {
     TokenInfo cur = top(s);
-    if(ast && cur.line > ast->line) {
-        cur.line    = ast->line;
-        cur.column  = ast->column;
-    }
-    s.errors.push({ErrorType::IndentationError, "", s.lexer->get_name(), cur, ast, s.lexer->get_line(cur.line), line, file ? file : "", function ? function : ""});
+    s.errors.push({ErrorType::IndentationError, cur.value, s.lexer->get_name(), cur, ast, s.lexer->get_line(cur.line), line, file ? file : "", function ? function : ""});
     report_error(s);
 }
 
@@ -1706,6 +1702,11 @@ bool suite(State & s, AstStmt & ast) {
                 }
                 make_docstring(s, suite_);
                 if(!expect(s, Token::Dedent) && !is(s, Token::End)) {
+                    if (expect(s, Token::Indent)){
+                        TokenInfo cur = top(s);
+                        cur.value = "unexpected indent";
+                        s.tok_cur = cur;
+                    }
                     indentation_error(s, ast);
                     return false;
                 }
