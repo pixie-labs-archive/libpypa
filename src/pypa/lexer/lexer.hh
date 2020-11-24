@@ -114,7 +114,7 @@ private:
                            TokenKind kind = TokenKind::Error,
                            TokenClass cls = TokenClass::Default);
 
-    bool add_indent_error(bool dedent = false);
+    bool add_indent_error(bool dedent, const std::string& message);
     void add_info_item(LexerInfoLevel level, TokenInfo const & t);
 
     inline void add_information(TokenInfo const & t) {
